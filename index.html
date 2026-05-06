@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>経費精算フォーム</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: #f5f5f3; color: #2c2c2a; min-height: 100vh; padding: 24px 16px; }
+  .container { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 500; color: #1D9E75; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #888780; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 12px; border: 0.5px solid #d3d1c7; padding: 20px; margin-bottom: 16px; }
+  .section-label { font-size: 11px; font-weight: 500; color: #888780; letter-spacing: 0.05em; margin-bottom: 14px; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 12px; color: #5f5e5a; margin-bottom: 5px; }
+  .field label .req { color: #E24B4A; margin-left: 2px; }
+  input[type=text], input[type=date], input[type=number], textarea, select {
+    width: 100%; font-family: inherit; font-size: 13px; color: #2c2c2a;
+    background: #fafaf8; border: 0.5px solid #d3d1c7; border-radius: 8px;
+    padding: 9px 11px; outline: none; transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: #1D9E75; background: #fff; }
+  textarea { resize: vertical; min-height: 60px; line-height: 1.6; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .items-list { display: flex; flex-direction: column; gap: 10px; }
+  .item-row { background: #fafaf8; border: 0.5px solid #d3d1c7; border-radius: 10px; padding: 12px; position: relative; }
+  .item-row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .item-full { grid-column: 1 / -1; }
+  .item-label { font-size: 11px; color: #888780; margin-bottom: 4px; }
+  .item-row input, .item-row select { font-size: 12px; padding: 7px 9px; }
+  .remove-btn { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; border-radius: 50%; border: 0.5px solid #d3d1c7; background: #fff; color: #888780; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .remove-btn:hover { background: #FCEBEB; color: #A32D2D; border-color: #A32D2D; }
+  .add-btn { width: 100%; font-size: 12px; padding: 8px; border-radius: 8px; border: 0.5px dashed #d3d1c7; background: transparent; color: #888780; cursor: pointer; margin-top: 4px; }
+  .add-btn:hover { background: #f1efe8; color: #2c2c2a; }
+  .total-bar { display: flex; justify-content: space-between; align-items: center; background: #E1F5EE; border-radius: 8px; padding: 10px 14px; margin-top: 12px; }
+  .total-label { font-size: 13px; color: #0F6E56; font-weight: 500; }
+  .total-amount { font-size: 20px; font-weight: 500; color: #0F6E56; }
+
+  /* 領収書アップロード */
+  .upload-area { border: 1.5px dashed #d3d1c7; border-radius: 10px; padding: 24px 16px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .upload-area:hover, .upload-area.dragover { border-color: #1D9E75; background: #f0faf6; }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-text { font-size: 13px; color: #5f5e5a; }
+  .upload-sub { font-size: 11px; color: #888780; margin-top: 4px; }
+  .upload-input { display: none; }
+  .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 12px; }
+  .preview-thumb { position: relative; border-radius: 8px; overflow: hidden; border: 0.5px solid #d3d1c7; aspect-ratio: 1; background: #f5f5f3; }
+  .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .del-thumb { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; font-size: 13px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .upload-count { font-size: 12px; color: #0F6E56; margin-top: 8px; font-weight: 500; text-align: center; }
+
+  /* ボタン */
+  .btn-row { display: flex; gap: 8px; margin-top: 4px; }
+  .btn { font-size: 13px; padding: 8px 20px; border-radius: 8px; border: 0.5px solid #d3d1c7; background: #fff; color: #2c2c2a; cursor: pointer; transition: background 0.1s; }
+  .btn:hover { background: #f1efe8; }
+  .btn-primary { background: #1D9E75; color: #fff; border-color: #1D9E75; }
+  .btn-primary:hover { background: #0F6E56; }
+  .btn-discord { background: #5865F2; color: #fff; border-color: #5865F2; font-weight: 500; }
+  .btn-discord:hover { background: #4752C4; }
+  .btn-discord:disabled { background: #a0a5d9; border-color: #a0a5d9; cursor: not-allowed; }
+
+  /* プレビュー */
+  .preview-wrap { display: none; }
+  .discord-preview { background: #313338; border-radius: 12px; padding: 20px; }
+  .discord-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .discord-avatar { width: 36px; height: 36px; border-radius: 50%; background: #EF9F27; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #fff; flex-shrink: 0; }
+  .discord-name { font-size: 14px; font-weight: 500; color: #fff; }
+  .discord-time { font-size: 11px; color: #949ba4; }
+  .discord-body { font-size: 13px; color: #dcddde; line-height: 1.9; white-space: pre-wrap; word-break: break-all; font-family: 'Consolas','Monaco',monospace; }
+  .attach-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .attach-thumb { width: 80px; height: 80px; border-radius: 6px; object-fit: cover; border: 0.5px solid rgba(255,255,255,0.15); }
+  .status { display: none; font-size: 13px; margin-top: 10px; padding: 10px 14px; border-radius: 8px; }
+  .status.success { background: #E1F5EE; color: #0F6E56; display: block; }
+  .status.error   { background: #FCEBEB; color: #8B1A1A; display: block; }
+  .status.loading { background: #f1efe8; color: #5f5e5a; display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>経費精算フォーム</h1>
+  <p class="subtitle">経費が発生したタイミングで入力 → プレビュー確認 → Discordに送信</p>
+
+  <div id="form-wrap">
+    <div class="card">
+      <div class="section-label">基本情報</div>
+      <div class="row2">
+        <div class="field">
+          <label>氏名<span class="req">*</span></label>
+          <input type="text" id="name" placeholder="例：山田　太郎">
+        </div>
+        <div class="field">
+          <label>申請日<span class="req">*</span></label>
+          <input type="date" id="apply-date">
+        </div>
+      </div>
+      <div class="field">
+        <label>用途・目的<span class="req">*</span></label>
+        <input type="text" id="purpose" placeholder="例：研修のため東京→名古屋 移動">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">経費明細</div>
+      <div class="items-list" id="items-list"></div>
+      <button class="add-btn" onclick="addItem()">＋ 明細を追加</button>
+      <div class="total-bar">
+        <div class="total-label">合計金額</div>
+        <div class="total-amount" id="total-amount">¥0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">領収書（画像添付）</div>
+      <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div class="upload-icon">🧾</div>
+        <div class="upload-text">タップして画像を選択 / ドラッグ＆ドロップ</div>
+        <div class="upload-sub">JPG・PNG・HEIC対応　1ファイル最大10MB　複数枚OK</div>
+      </div>
+      <input type="file" id="file-input" class="upload-input" accept="image/*" multiple onchange="onFileSelect(event)">
+      <div class="preview-grid" id="preview-grid"></div>
+      <div class="upload-count" id="upload-count"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">備考</div>
+      <div class="field">
+        <textarea id="note" placeholder="特記事項があれば入力してください"></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="showPreview()">プレビューを確認 →</button>
+      <button class="btn" onclick="clearAll()">リセット</button>
+    </div>
+  </div>
+
+  <div class="preview-wrap" id="preview-wrap">
+    <div class="discord-preview">
+      <div class="discord-header">
+        <div class="discord-avatar" id="avatar">？</div>
+        <div>
+          <div class="discord-name" id="discord-name">―</div>
+          <div class="discord-time" id="discord-time">今日 ―</div>
+        </div>
+      </div>
+      <div class="discord-body" id="preview-text"></div>
+      <div class="attach-preview" id="attach-preview"></div>
+    </div>
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-discord" id="send-btn" onclick="sendToDiscord(this)">Discordに送信 ↗</button>
+      <button class="btn" onclick="backToForm()">← 編集に戻る</button>
+    </div>
+    <div class="status" id="status-msg"></div>
+  </div>
+</div>
+
+<script>
+const WEBHOOK_URL = 'https://discord.com/api/webhooks/1501426208347263149/fVkN2ByEg-vZduClIawqpIXYdmYdLBx4RyrGm3xxZ5Ms8av6ZUFZP1jCHQ3u2Dkq8lXV';
+const CATEGORIES = ['交通費', '備品・消耗品', 'その他'];
+let itemCount = 0;
+let uploadedFiles = [];
+
+// ── ファイルアップロード ──────────────────────────
+function onDragOver(e) { e.preventDefault(); document.getElementById('upload-area').classList.add('dragover'); }
+function onDragLeave(e) { document.getElementById('upload-area').classList.remove('dragover'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-area').classList.remove('dragover');
+  addFiles(Array.from(e.dataTransfer.files));
+}
+function onFileSelect(e) { addFiles(Array.from(e.target.files)); e.target.value = ''; }
+
+function addFiles(files) {
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 10 * 1024 * 1024) { alert(`${file.name} は10MBを超えているため追加できません`); return; }
+    uploadedFiles.push(file);
+    renderThumbs();
+  });
+}
+
+function removeFile(idx) {
+  uploadedFiles.splice(idx, 1);
+  renderThumbs();
+}
+
+function renderThumbs() {
+  const grid = document.getElementById('preview-grid');
+  const count = document.getElementById('upload-count');
+  grid.innerHTML = '';
+  uploadedFiles.forEach((file, i) => {
+    const url = URL.createObjectURL(file);
+    const wrap = document.createElement('div');
+    wrap.className = 'preview-thumb';
+    wrap.innerHTML = `<img src="${url}" alt="${file.name}"><button class="del-thumb" onclick="removeFile(${i})">×</button>`;
+    grid.appendChild(wrap);
+  });
+  count.textContent = uploadedFiles.length > 0 ? `${uploadedFiles.length}枚 選択中` : '';
+}
+
+// ── 明細 ──────────────────────────────────────────
+function addItem() {
+  itemCount++;
+  const id = itemCount;
+  const list = document.getElementById('items-list');
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  div.id = `item-${id}`;
+  div.innerHTML = `
+    <button class="remove-btn" onclick="removeItem(${id})">×</button>
+    <div class="item-row-grid">
+      <div>
+        <div class="item-label">カテゴリ<span style="color:#E24B4A">*</span></div>
+        <select id="cat-${id}">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select>
+      </div>
+      <div>
+        <div class="item-label">金額（円）<span style="color:#E24B4A">*</span></div>
+        <input type="number" id="amount-${id}" placeholder="0" min="0" oninput="updateTotal()">
+      </div>
+      <div class="item-full">
+        <div class="item-label">内容・詳細<span style="color:#E24B4A">*</span></div>
+        <input type="text" id="desc-${id}" placeholder="例：東京→名古屋　新幹線自由席">
+      </div>
+      <div>
+        <div class="item-label">利用日</div>
+        <input type="date" id="date-${id}">
+      </div>
+      <div>
+        <div class="item-label">領収書</div>
+        <select id="receipt-${id}"><option>あり</option><option>なし</option></select>
+      </div>
+    </div>`;
+  list.appendChild(div);
+  updateTotal();
+}
+
+function removeItem(id) {
+  document.getElementById(`item-${id}`)?.remove();
+  updateTotal();
+}
+
+function updateTotal() {
+  let total = 0;
+  document.querySelectorAll('.item-row').forEach(row => {
+    const id = row.id.replace('item-', '');
+    const amt = parseInt(document.getElementById(`amount-${id}`)?.value || '0', 10);
+    if (!isNaN(amt)) total += amt;
+  });
+  document.getElementById('total-amount').textContent = '¥' + total.toLocaleString();
+}
+
+function getItems() {
+  return Array.from(document.querySelectorAll('.item-row')).map(row => {
+    const id = row.id.replace('item-', '');
+    return {
+      cat:     document.getElementById(`cat-${id}`)?.value || '',
+      amount:  document.getElementById(`amount-${id}`)?.value || '0',
+      desc:    document.getElementById(`desc-${id}`)?.value || '',
+      date:    document.getElementById(`date-${id}`)?.value || '',
+      receipt: document.getElementById(`receipt-${id}`)?.value || '',
+    };
+  });
+}
+
+function v(id) { return document.getElementById(id)?.value?.trim() || ''; }
+
+function nowStr() {
+  const d = new Date();
+  return `今日 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function buildText() {
+  const name    = v('name')       || '（氏名）';
+  const date    = v('apply-date') || '（日付）';
+  const purpose = v('purpose')    || '（未記入）';
+  const note    = v('note');
+  const items   = getItems();
+  let total = 0;
+  let itemLines = '';
+  items.forEach((item, i) => {
+    const amt = parseInt(item.amount || '0', 10);
+    total += isNaN(amt) ? 0 : amt;
+    itemLines += `  ${i+1}. 【${item.cat}】${item.desc}\n`;
+    itemLines += `     金額：¥${(isNaN(amt)?0:amt).toLocaleString()}`;
+    if (item.date) itemLines += `　利用日：${item.date}`;
+    itemLines += `　領収書：${item.receipt}\n`;
+  });
+  let t = `💴 **経費精算申請**\n`;
+  t += `━━━━━━━━━━━━━━━━━━\n`;
+  t += `👤 ${name}　｜　申請日：${date}\n`;
+  t += `━━━━━━━━━━━━━━━━━━\n\n`;
+  t += `📋 **用途・目的**\n${purpose}\n\n`;
+  t += `🧾 **経費明細**\n${itemLines || '（明細なし）\n'}\n`;
+  t += `💰 **合計金額：¥${total.toLocaleString()}**\n`;
+  if (note) t += `\n📝 **備考**\n${note}\n`;
+  if (uploadedFiles.length > 0) t += `\n📎 **領収書：${uploadedFiles.length}枚添付**`;
+  t += `\n━━━━━━━━━━━━━━━━━━`;
+  return t;
+}
+
+function showPreview() {
+  const name = v('name') || '―';
+  document.getElementById('preview-text').textContent = buildText();
+  document.getElementById('avatar').textContent = name[0] || '？';
+  document.getElementById('discord-name').textContent = name;
+  document.getElementById('discord-time').textContent = nowStr();
+
+  const ap = document.getElementById('attach-preview');
+  ap.innerHTML = '';
+  uploadedFiles.forEach(file => {
+    const img = document.createElement('img');
+    img.className = 'attach-thumb';
+    img.src = URL.createObjectURL(file);
+    img.alt = file.name;
+    ap.appendChild(img);
+  });
+
+  document.getElementById('form-wrap').style.display = 'none';
+  document.getElementById('preview-wrap').style.display = 'block';
+  setStatus('', '');
+}
+
+function backToForm() {
+  document.getElementById('form-wrap').style.display = 'block';
+  document.getElementById('preview-wrap').style.display = 'none';
+}
+
+function setStatus(type, msg) {
+  const el = document.getElementById('status-msg');
+  el.className = 'status' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  el.style.display = type ? 'block' : 'none';
+}
+
+async function sendToDiscord(btn) {
+  btn.disabled = true;
+  btn.textContent = '送信中...';
+  setStatus('loading', '⏳ Discordに送信しています...');
+
+  try {
+    const form = new FormData();
+    const payload = { content: buildText() };
+    form.append('payload_json', JSON.stringify(payload));
+    uploadedFiles.forEach((file, i) => {
+      form.append(`files[${i}]`, file, file.name);
+    });
+
+    const res = await fetch(WEBHOOK_URL, { method: 'POST', body: form });
+
+    if (res.ok) {
+      setStatus('success', `✅ Discordの #経費精算 チャンネルに送信しました！${uploadedFiles.length > 0 ? `（領収書${uploadedFiles.length}枚添付）` : ''}`);
+      btn.textContent = '送信しました ✓';
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Discordに送信 ↗'; }, 3000);
+    } else {
+      setStatus('error', `❌ 送信に失敗しました（エラー: ${res.status}）`);
+      btn.disabled = false; btn.textContent = 'Discordに送信 ↗';
+    }
+  } catch(e) {
+    setStatus('error', '❌ 送信に失敗しました。ネットワーク接続を確認してください。');
+    btn.disabled = false; btn.textContent = 'Discordに送信 ↗';
+  }
+}
+
+function clearAll() {
+  ['name','apply-date','purpose','note'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('items-list').innerHTML = '';
+  document.getElementById('preview-grid').innerHTML = '';
+  document.getElementById('upload-count').textContent = '';
+  uploadedFiles = [];
+  itemCount = 0;
+  updateTotal();
+  addItem();
+}
+
+document.getElementById('apply-date').value = new Date().toISOString().split('T')[0];
+addItem();
+</script>
+</body>
+</html>
